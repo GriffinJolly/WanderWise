@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Progress } from "@/components/ui/progress";
+import { Link } from 'react-router-dom';
 
 const CreateTrip = () => {
   const [currentStep, setCurrentStep] = useState(0);
@@ -71,18 +72,22 @@ const CreateTrip = () => {
 
   const handleDone = () => console.log('Final answers:', answers);
 
-  // Calculate progress percentage
   const progressPercentage = ((currentStep) / (steps.length - 1)) * 100;
 
-
   return (
-    <div className="flex justify-end h-screen pt-10 pr-10">
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.5 }}
+      className="flex justify-end h-screen pt-10 pr-10"
+    >
       <div className="w-full max-w-2xl">
         <h2 className="font-bold text-2xl">Travel preferences</h2>
         <p className="mt-3 text-gray-500 text-xl">Provide info, get a custom itinerary.</p>
         <div className="mt-20">
           <div className="mb-4">
-            <Progress value={progressPercentage} max={100} /> {/* Use calculated percentage */}
+            <Progress value={progressPercentage} max={100} />
           </div>
           <AnimatePresence mode="wait">
             <motion.div
@@ -102,7 +107,22 @@ const CreateTrip = () => {
                     <Button variant="outline" onClick={handlePrevious} className="px-6 py-2 border border-gray-300 text-gray-700 hover:bg-gray-50">Previous</Button>
                   )}
                   {currentStep === steps.length - 1 ? (
-                    <Button variant="default" onClick={handleDone} className="px-6 py-2 rounded text-white bg-green-600 hover:bg-green-700">Done</Button>
+                    <Link 
+                      to="/itin" 
+                      state={{ tripDetails: answers }}
+                    >
+                      <motion.div
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <Button 
+                          variant="default" 
+                          className="px-6 py-2 rounded text-white bg-green-600 hover:bg-green-700"
+                        >
+                          Done
+                        </Button>
+                      </motion.div>
+                    </Link>
                   ) : (
                     <Button variant="default" onClick={handleNext} className="px-6 py-2 rounded text-white bg-gray-900 hover:bg-gray-800">Next</Button>
                   )}
@@ -112,7 +132,7 @@ const CreateTrip = () => {
           </AnimatePresence>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 
