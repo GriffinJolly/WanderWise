@@ -1,5 +1,6 @@
 import React from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { MapPin, Star, Calendar, Users, Wallet, Clock } from 'lucide-react';
 
 const TravelScreenshot = () => {
   const hotels = [
@@ -30,43 +31,64 @@ const TravelScreenshot = () => {
   ];
 
   return (
-    <ScrollArea className="w-screen h-screen">
+    <ScrollArea className="w-screen h-screen bg-[#E4E0E1]">
       <div>
-        <img 
-          src="/gateway.jpg" 
-          alt="Taj Mahal" 
-          className="w-full h-[607px] object-cover"
-        />
+        <div className="relative">
+          <img 
+            src="/gateway.jpg" 
+            alt="Taj Mahal" 
+            className="w-full h-[607px] object-cover brightness-90"
+          />
+          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-[#493628]/90 to-transparent h-32" />
+        </div>
 
-        <div className="p-4 bg-blue-50">
-          <h2 className="text-2xl font-bold">Mumbai, India</h2>
-          <div className="flex space-x-2 mt-2">
-            <span className="bg-blue-100 px-2 py-1 rounded text-sm">3 days</span>
-            <span className="bg-blue-100 px-2 py-1 rounded text-sm">₹85,000</span>
-            <span className="bg-blue-100 px-2 py-1 rounded text-sm">3 People</span>
+        <div className="p-8 bg-[#D6C0B3]">
+          <div className="flex items-center space-x-3 mb-4">
+            <MapPin className="w-6 h-6 text-[#493628]" />
+            <h2 className="text-3xl font-bold text-[#493628]">Mumbai, India</h2>
+          </div>
+          <div className="flex space-x-4 mt-2">
+            <div className="flex items-center space-x-2 bg-[#AB886D] px-4 py-2 rounded-full text-white">
+              <Calendar className="w-4 h-4" />
+              <span className="text-sm font-medium">3 days</span>
+            </div>
+            <div className="flex items-center space-x-2 bg-[#AB886D] px-4 py-2 rounded-full text-white">
+              <Wallet className="w-4 h-4" />
+              <span className="text-sm font-medium">₹85,000</span>
+            </div>
+            <div className="flex items-center space-x-2 bg-[#AB886D] px-4 py-2 rounded-full text-white">
+              <Users className="w-4 h-4" />
+              <span className="text-sm font-medium">3 People</span>
+            </div>
           </div>
         </div>
 
-        <div className="p-4">
-          <h3 className="text-xl font-semibold mb-4">Hotel Recommendations</h3>
-          <div className="grid grid-cols-2 gap-4">
+        <div className="p-8">
+          <h3 className="text-2xl font-bold text-[#493628] mb-6">Hotel Recommendations</h3>
+          <div className="grid grid-cols-2 gap-6">
             {hotels.map((hotel, index) => (
-              <div key={index} className="border rounded p-2">
+              <div key={index} className="bg-white rounded-lg overflow-hidden shadow-lg transition-transform hover:scale-[1.02]">
                 <img 
                   src={hotel.image} 
                   alt={hotel.name} 
-                  className="w-full h-[266px] object-cover rounded mb-2"
+                  className="w-full h-[266px] object-cover"
                 />
-                <h4 className="font-medium text-sm">{hotel.name}</h4>
-                <p className="text-xs text-gray-600">{hotel.stars} stars</p>
-                <p className="text-xs text-gray-600">{hotel.price}</p>
+                <div className="p-4 bg-[#D6C0B3]">
+                  <h4 className="font-semibold text-[#493628] text-lg mb-2">{hotel.name}</h4>
+                  <div className="flex items-center space-x-1 mb-2">
+                    {[...Array(Math.floor(hotel.stars))].map((_, i) => (
+                      <Star key={i} className="w-4 h-4 fill-[#AB886D] text-[#AB886D]" />
+                    ))}
+                  </div>
+                  <p className="text-sm text-[#493628]">{hotel.price}</p>
+                </div>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="p-4 bg-gray-50">
-          <h3 className="text-xl font-semibold mb-4">Your Itinerary</h3>
+        <div className="p-8 bg-[#D6C0B3]">
+          <h3 className="text-2xl font-bold text-[#493628] mb-6">Your Itinerary</h3>
           <div className="space-y-4">
             {[
               { time: "10:00 AM - 12:00 PM", name: "High Roller Observation Wheel", description: "A massive observation wheel offering panoramic views" },
@@ -74,10 +96,15 @@ const TravelScreenshot = () => {
               { time: "2:00 PM - 4:00 PM", name: "Bellagio Conservatory & Botanical Garden", description: "A stunning botanical display that changes with seasons" },
               { time: "4:00 PM - 6:00 PM", name: "The Venetian and The Palazzo", description: "Explore these iconic Las Vegas resorts" }
             ].map((event, index) => (
-              <div key={index} className="bg-white border rounded p-3">
-                <p className="text-sm font-semibold text-blue-600">{event.time}</p>
-                <h4 className="font-medium">{event.name}</h4>
-                <p className="text-xs text-gray-600">{event.description}</p>
+              <div key={index} className="bg-white rounded-lg p-4 shadow-md hover:shadow-lg transition-shadow">
+                <div className="flex items-start space-x-4">
+                  <Clock className="w-5 h-5 text-[#AB886D] mt-1" />
+                  <div>
+                    <p className="text-sm font-semibold text-[#AB886D] mb-1">{event.time}</p>
+                    <h4 className="font-medium text-[#493628] mb-1">{event.name}</h4>
+                    <p className="text-sm text-[#493628]/80">{event.description}</p>
+                  </div>
+                </div>
               </div>
             ))}
           </div>

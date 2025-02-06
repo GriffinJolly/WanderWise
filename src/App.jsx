@@ -10,7 +10,7 @@ function App() {
 
   return (
     <>
-       <style>{'body { background-color: #B3B4BD; }'}</style>
+       <style>{'body { background-color: #feeeee; }'}</style>
       {/*Hero */}
       <Hero/>
     </>
