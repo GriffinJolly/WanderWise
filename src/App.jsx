@@ -1,20 +1,20 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
-import { Button } from './components/ui/button'
-import Hero from './components/custom/Hero'
+import { Routes, Route } from 'react-router-dom';
+import Hero from './components/custom/Hero';
+import CreateTrip from './create-trip';
+import Itin from './itin';
+import Header from './components/custom/Header';
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-       <style>{'body { background-color: #feeeee; }'}</style>
-      {/*Hero */}
-      <Hero/>
-    </>
-  )
+    <div style={{ backgroundColor: "#feeeee", minHeight: "100vh", margin: 0, fontFamily: "Arial, sans-serif" }}>
+      <Header />
+      <Routes>
+        <Route path="/" element={<Hero />} />
+        <Route path="/create-trip" element={<CreateTrip />} />
+        <Route path="/itin" element={<Itin />} />
+      </Routes>
+    </div>
+  );
 }
 
-export default App
+export default App;

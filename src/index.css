@@ -8,15 +8,21 @@
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
+}
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #feeeee;
+  color: #493628;
+}
 
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+/* Remove the dark mode styles */
+@media (prefers-color-scheme: light) {
+  :root {
+    color: #213547;
+    background-color: #ffffff;
+  }
 }
 
 a {
@@ -26,9 +32,6 @@ a {
 }
 a:hover {
   color: #535bf2;
-}
-
-body {
 }
 
 h1 {
@@ -53,19 +56,6 @@ button:hover {
 button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
 }
 
 @layer base {
@@ -131,4 +121,37 @@ button:focus-visible {
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Add these styles to your existing index.css */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+  background: #D6C0B3;
+  height: 0.5rem;
+  border-radius: 0.25rem;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  margin-top: -4px;
+  background-color: #493628;
+  height: 1rem;
+  width: 1rem;
+  border-radius: 50%;
+}
+
+input[type="range"]:focus {
+  outline: none;
+}
+
+input[type="range"]:focus::-webkit-slider-thumb {
+  background-color: #AB886D;
+  box-shadow: 0 0 0 2px rgba(171, 136, 109, 0.2);
 }

@@ -2,29 +2,19 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
 import './index.css'
-import { RouterProvider, createBrowserRouter } from 'react-router-dom'
-import CreateTrip from './create-trip/index.jsx'
-import Header from './components/custom/Header.jsx'
-import Itin from './itin/index.jsx'
+import { BrowserRouter } from 'react-router-dom'
+import { GoogleOAuthProvider } from '@react-oauth/google';
 
-const router=createBrowserRouter([
-  {
-    path:'/',
-    element:<App/>
-  },
-  {
-    path:'/create-trip',
-    element:<CreateTrip/>
-  },
-  {
-    path:'/itin',
-    element:<Itin/>
-  }
-]);
+const CLIENT_ID = "352982353652-o1j46bvtfdmqdva3u6ove056qh9l8ach.apps.googleusercontent.com";
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <Header/>
-    <RouterProvider router={router} />
-  </React.StrictMode>,
+    <GoogleOAuthProvider 
+      clientId={CLIENT_ID}
+    >
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    </GoogleOAuthProvider>
+  </React.StrictMode>
 )

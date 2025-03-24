@@ -1,117 +1,417 @@
-import React from 'react';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { MapPin, Star, Calendar, Users, Wallet, Clock } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
+import { 
+  Calendar, Plane, Map, Hotel, Coffee, Utensils, Sun, 
+  Sunset, Moon, Info, AlertCircle, ChefHat, Lightbulb, BookOpen
+} from 'lucide-react';
+import { motion } from 'framer-motion';
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import ImageGallery from '@/components/ui/ImageGallery';
 
-const TravelScreenshot = () => {
-  const hotels = [
-    { 
-      name: "The Taj Mahal Palace", 
-      stars: 5, 
-      price: "$300-500 per night",
-      image: "/hotel1.png"
-    },
-    { 
-      name: "JW Marriot Mumbai Sahar", 
-      stars: 4.5, 
-      price: "$400-600 per night",
-      image: "/hotel2.jpg"
-    },
-    { 
-      name: "The Taj Land's End", 
-      stars: 5, 
-      price: "$500-800 per night",
-      image: "/hotel3.jpg"
-    },
-    { 
-      name: "Trident Hotel Bandra Kurla", 
-      stars: 5, 
-      price: "$250-380 per night",
-      image: "/hotel4.jpg"
+const Itinerary = () => {
+  const location = useLocation();
+  const { destination, tripData } = location.state || { 
+    destination: "Bangalore",
+    tripData: "Day 1:\n## Bangalore Travel Itinerary (5 Days/4 Nights)\n\nDay 1:\nThis itinerary balances historical exploration, cultural experiences, vibrant nightlife, and the natural beauty surrounding Bangalore. It's designed to be flexible, allowing you to adjust based on your interests and pace.\n\nDay 1:\n**Accommodation:** Choose based on your budget and preferred location. Options range from budget-friendly hostels (Zostel, The Hosteller) to mid-range hotels (The Chancery Pavilion, Lemon Tree Premier) and luxury properties (The Oberoi, ITC Gardenia). Consider staying near MG Road or Indiranagar for easy access to attractions and nightlife."
+  };
+
+  const [images, setImages] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const extractDurationFromText = (text) => {
+    const durationMatch = text.match(/\((\d+)\s*Days/i);
+    return durationMatch ? parseInt(durationMatch[1]) : 5;  // Default to 5 if not found
+  };
+
+  const duration = extractDurationFromText(tripData);
+
+  // Parse itinerary text into structured data with error handling
+  const parseDays = (text) => {
+    try {
+      // Split by "Day X:" pattern
+      const dayPattern = /Day\s+\d+:/gi;
+      const dayMatches = [...text.matchAll(dayPattern)];
+      
+      if (dayMatches.length === 0) {
+        return [{ dayNum: 1, activities: [text] }];
+      }
+      
+      const days = [];
+      
+      // Process each day section
+      for (let i = 0; i < dayMatches.length; i++) {
+        const currentMatch = dayMatches[i];
+        const nextMatch = dayMatches[i + 1];
+        
+        const startIndex = currentMatch.index;
+        const endIndex = nextMatch ? nextMatch.index : text.length;
+        
+        const daySection = text.substring(startIndex, endIndex);
+        const dayHeader = daySection.match(/Day\s+(\d+):/i);
+        const dayNum = dayHeader ? parseInt(dayHeader[1]) : i + 1;
+        
+        // Get content after the "Day X:" header
+        const headerEndIndex = daySection.indexOf(':') + 1;
+        const content = daySection.substring(headerEndIndex).trim();
+        
+        // Split content into paragraphs/activities, filtering out empty lines
+        const paragraphs = content.split(/\n+/).filter(p => p.trim() !== '').map(p => {
+          // Clean up any markdown symbols and fix time labels with asterisks
+          let cleanedText = p.replace(/^\*\*|\*\*$|^\#\#|\#|^\*|\*$/g, '').trim();
+          // Remove asterisks from time labels like **Morning:**
+          cleanedText = cleanedText.replace(/\*\*([\w\s]+):\*\*/g, '$1:');
+          return cleanedText;
+        });
+        
+        days.push({ dayNum, activities: paragraphs });
+      }
+      
+      return days;
+    } catch (error) {
+      console.error("Error parsing trip data:", error);
+      // Return a default day if parsing fails
+      return [{ dayNum: 1, activities: ["Arrive in Bangalore", "Check in at hotel", "Explore the city"] }];
     }
-  ];
+  };
+
+  const days = parseDays(tripData);
+
+  // Categorize activities into main activities, dining, notes and optional
+  const categorizeActivities = (activities) => {
+    const result = {
+      mainActivities: [],
+      dining: [],
+      notes: [],
+      optional: [],
+      accommodation: []
+    };
+
+    activities.forEach(activity => {
+      const text = String(activity).toLowerCase();
+      
+      // Extract accommodations
+      if (text.includes('accommodation:') || (text.includes('accommodation') && !text.includes('note:')) ||
+          text.includes('hotel:') || text.includes('stay at')) {
+        result.accommodation.push(activity);
+      }
+      // Extract any notes (could be implementation notes or general trip notes)
+      else if (text.includes('note:') || text.startsWith('note ') || text.includes('tip:')) {
+        result.notes.push(activity);
+      }
+      // Extract dining recommendations
+      else if (text.includes('dinner:') || text.includes('lunch:') || text.includes('breakfast:') || 
+               text.includes('restaurant') || text.includes('cuisine') || text.includes('eat at') ||
+               text.includes('food') || text.includes('dining') || text.includes('café') || 
+               text.includes('cafe') || text.includes('coffee')) {
+        result.dining.push(activity);
+      }
+      // Extract optional activities
+      else if (text.includes('optional:') || text.includes('alternative:') || 
+               text.includes('you can also') || text.includes('alternatively')) {
+        result.optional.push(activity);
+      }
+      // Everything else is a main activity
+      else {
+        result.mainActivities.push(activity);
+      }
+    });
+
+    return result;
+  };
+
+  // Function to get icon for activity
+  const getActivityIcon = (activity) => {
+    const text = String(activity).toLowerCase();
+    
+    // Check for time of day labels
+    if (text.startsWith('morning:')) {
+      return <Sun className="text-amber-700" />;
+    } else if (text.startsWith('afternoon:')) {
+      return <Sun className="text-amber-700" />;
+    } else if (text.startsWith('evening:')) {
+      return <Sunset className="text-amber-700" />;
+    } else if (text.startsWith('night:')) {
+      return <Moon className="text-amber-700" />;
+    } else if (text.startsWith('dinner:') || text.includes('restaurant') || text.includes('cuisine')) {
+      return <ChefHat className="text-amber-700" />;
+    } else if (text.startsWith('lunch:') || text.startsWith('breakfast:')) {
+      return <Utensils className="text-amber-700" />;
+    } else if (text.includes('note:') || text.includes('tip:')) {
+      return <AlertCircle className="text-amber-700" />;
+    } else if (text.includes('optional:') || text.includes('alternative:')) {
+      return <Lightbulb className="text-amber-700" />;
+    }
+    // Then check for activity types
+    else if (text.includes('accommodation') || text.includes('hotel') || text.includes('stay') || text.includes('hostel')) {
+      return <Hotel className="text-amber-700" />;
+    } else if (text.includes('airport') || text.includes('arrive') || text.includes('flight') || text.includes('depart')) {
+      return <Plane className="text-amber-700" />;
+    } else if (text.includes('café') || text.includes('cafe') || text.includes('coffee')) {
+      return <Coffee className="text-amber-700" />;
+    } else {
+      return <Map className="text-amber-700" />;
+    }
+  };
+
+  // Format activity text to style time labels differently
+  const formatActivityText = (activity) => {
+    // Clean up asterisks and bold markers from any part of the text
+    let cleanText = String(activity).replace(/\*\*/g, '');
+    
+    // Look for label patterns like "Morning:" or "Dinner:" at the beginning of the text
+    const labelPattern = /^(Morning|Afternoon|Evening|Night|Dinner|Lunch|Breakfast|Note|Optional|Accommodation|Tip):/i;
+    const match = cleanText.match(labelPattern);
+    
+    if (match) {
+      const label = match[1];
+      const content = cleanText.substring(match[0].length).trim();
+      
+      return (
+        <>
+          <span className="font-semibold text-amber-800">{label}: </span>
+          <span>{content}</span>
+        </>
+      );
+    }
+    
+    return cleanText.trim();
+  };
+
+  // Helper to render a section with consistent styling
+  const renderSection = (title, items, icon, bgColor, borderColor, showIfEmpty = false) => {
+    if (!showIfEmpty && items.length === 0) return null;
+    
+    return (
+      <div className="mb-6">
+        <h4 className="text-lg font-medium text-amber-800 mb-3 flex items-center">
+          {icon}
+          {title}
+        </h4>
+        {items.length > 0 ? (
+          <div className={`${bgColor} rounded-lg p-4 border ${borderColor} shadow-sm`}>
+            {items.map((item, index) => (
+              <div key={index} className="mb-3 last:mb-0">
+                <p className="text-gray-700">{formatActivityText(item)}</p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className={`${bgColor} rounded-lg p-4 border ${borderColor} shadow-sm text-gray-500 italic text-center`}>
+            No {title.toLowerCase()} information available
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  useEffect(() => {
+    fetchImagesFromGemini();
+  }, [destination]);
+
+  const fetchImagesFromGemini = async () => {
+    try {
+      const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GOOGLE_GEMINI_AI_API_KEY);
+      const model = genAI.getGenerativeModel({ model: "gemini-pro-vision" });
+      
+      // Get images for the destination
+      const prompt = `Generate a list of popular tourist spots and hotels in ${destination}`;
+      const result = await model.generateContent(prompt);
+      // Process the result and set images
+      // Note: You'll need to implement actual image fetching logic here
+      
+      setImages(/* processed images */);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching images:', error);
+      setLoading(false);
+    }
+  };
 
   return (
-    <ScrollArea className="w-screen h-screen bg-[#E4E0E1]">
-      <div>
-        <div className="relative">
-          <img 
-            src="/gateway.jpg" 
-            alt="Taj Mahal" 
-            className="w-full h-[607px] object-cover brightness-90"
-          />
-          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-[#493628]/90 to-transparent h-32" />
-        </div>
-
-        <div className="p-8 bg-[#D6C0B3]">
-          <div className="flex items-center space-x-3 mb-4">
-            <MapPin className="w-6 h-6 text-[#493628]" />
-            <h2 className="text-3xl font-bold text-[#493628]">Mumbai, India</h2>
-          </div>
-          <div className="flex space-x-4 mt-2">
-            <div className="flex items-center space-x-2 bg-[#AB886D] px-4 py-2 rounded-full text-white">
-              <Calendar className="w-4 h-4" />
-              <span className="text-sm font-medium">3 days</span>
-            </div>
-            <div className="flex items-center space-x-2 bg-[#AB886D] px-4 py-2 rounded-full text-white">
-              <Wallet className="w-4 h-4" />
-              <span className="text-sm font-medium">₹85,000</span>
-            </div>
-            <div className="flex items-center space-x-2 bg-[#AB886D] px-4 py-2 rounded-full text-white">
-              <Users className="w-4 h-4" />
-              <span className="text-sm font-medium">3 People</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="p-8">
-          <h3 className="text-2xl font-bold text-[#493628] mb-6">Hotel Recommendations</h3>
-          <div className="grid grid-cols-2 gap-6">
-            {hotels.map((hotel, index) => (
-              <div key={index} className="bg-white rounded-lg overflow-hidden shadow-lg transition-transform hover:scale-[1.02]">
-                <img 
-                  src={hotel.image} 
-                  alt={hotel.name} 
-                  className="w-full h-[266px] object-cover"
-                />
-                <div className="p-4 bg-[#D6C0B3]">
-                  <h4 className="font-semibold text-[#493628] text-lg mb-2">{hotel.name}</h4>
-                  <div className="flex items-center space-x-1 mb-2">
-                    {[...Array(Math.floor(hotel.stars))].map((_, i) => (
-                      <Star key={i} className="w-4 h-4 fill-[#AB886D] text-[#AB886D]" />
-                    ))}
-                  </div>
-                  <p className="text-sm text-[#493628]">{hotel.price}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="p-8 bg-[#D6C0B3]">
-          <h3 className="text-2xl font-bold text-[#493628] mb-6">Your Itinerary</h3>
-          <div className="space-y-4">
-            {[
-              { time: "10:00 AM - 12:00 PM", name: "High Roller Observation Wheel", description: "A massive observation wheel offering panoramic views" },
-              { time: "12:00 PM - 2:00 PM", name: "The LINQ Promenade", description: "Shopping and dining area with various attractions" },
-              { time: "2:00 PM - 4:00 PM", name: "Bellagio Conservatory & Botanical Garden", description: "A stunning botanical display that changes with seasons" },
-              { time: "4:00 PM - 6:00 PM", name: "The Venetian and The Palazzo", description: "Explore these iconic Las Vegas resorts" }
-            ].map((event, index) => (
-              <div key={index} className="bg-white rounded-lg p-4 shadow-md hover:shadow-lg transition-shadow">
-                <div className="flex items-start space-x-4">
-                  <Clock className="w-5 h-5 text-[#AB886D] mt-1" />
-                  <div>
-                    <p className="text-sm font-semibold text-[#AB886D] mb-1">{event.time}</p>
-                    <h4 className="font-medium text-[#493628] mb-1">{event.name}</h4>
-                    <p className="text-sm text-[#493628]/80">{event.description}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="min-h-screen bg-gradient-to-b from-amber-50 to-[#D6C0B3]"
+    >
+      {/* Hero Section */}
+      <div className="relative h-96 overflow-hidden">
+        <div className="absolute inset-0 bg-amber-700 opacity-90"></div>
+        <div className="relative z-10 max-w-6xl mx-auto p-6 md:p-10 h-full flex flex-col justify-center">
+          <motion.h1 
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            className="text-4xl md:text-6xl font-bold text-white mb-4"
+          >
+            Your Trip to {destination}
+          </motion.h1>
+          <motion.p 
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="text-xl text-white/90"
+          >
+            Discover the magic of your upcoming adventure
+          </motion.p>
         </div>
       </div>
-    </ScrollArea>
+
+      {/* Content Section */}
+      <div className="max-w-6xl mx-auto px-4 py-8">
+        <div className="grid md:grid-cols-3 gap-8">
+          {/* Main Itinerary */}
+          <div className="md:col-span-2 space-y-6">
+            <motion.div 
+              initial={{ x: -20, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              className="bg-white rounded-2xl shadow-xl overflow-hidden"
+            >
+              <div className="bg-amber-700 p-6 flex items-center">
+                <Calendar className="w-8 h-8 text-white mr-4" />
+                <h2 className="text-2xl font-bold text-white">Your Itinerary</h2>
+              </div>
+              <div className="p-6">
+                {days.length > 0 ? (
+                  days.map((day, index) => {
+                    const categorizedActivities = categorizeActivities(day.activities);
+                    
+                    return (
+                      <div key={index} className={`mb-8 ${index !== days.length - 1 ? "border-b border-amber-100 pb-8" : ""}`}>
+                        <h3 className="text-xl font-semibold text-amber-800 mb-4 flex items-center bg-amber-50 p-3 rounded-lg shadow-sm">
+                          <span className="bg-amber-100 text-amber-800 rounded-full w-8 h-8 flex items-center justify-center mr-3">
+                            {day.dayNum}
+                          </span>
+                          Day {day.dayNum}
+                        </h3>
+                        
+                        {/* Accommodation Section */}
+                        {renderSection(
+                          "Accommodation", 
+                          categorizedActivities.accommodation, 
+                          <Hotel className="w-5 h-5 mr-2" />, 
+                          "bg-purple-50", 
+                          "border-purple-100"
+                        )}
+                        
+                        {/* Main Activities Section */}
+                        {categorizedActivities.mainActivities.length > 0 && (
+                          <div className="mb-6">
+                            <h4 className="text-lg font-medium text-amber-800 mb-3 flex items-center">
+                              <Map className="w-5 h-5 mr-2" />
+                              Main Activities
+                            </h4>
+                            <div className="space-y-4 pl-4 border-l-2 border-amber-100 mb-6 bg-amber-50 p-4 rounded-r-lg shadow-sm">
+                              {categorizedActivities.mainActivities.map((activity, actIndex) => (
+                                <div key={actIndex} className="flex items-start mb-4 last:mb-0">
+                                  <div className="bg-amber-100 p-1 rounded-full -ml-7 border-2 border-amber-100">
+                                    {getActivityIcon(activity)}
+                                  </div>
+                                  <div className="ml-4">
+                                    <p className="text-gray-700">{formatActivityText(activity)}</p>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Dining Recommendations */}
+                        {renderSection(
+                          "Dining Recommendations", 
+                          categorizedActivities.dining, 
+                          <ChefHat className="w-5 h-5 mr-2" />, 
+                          "bg-orange-50", 
+                          "border-orange-100"
+                        )}
+                        
+                        {/* Optional Activities */}
+                        {renderSection(
+                          "Optional Activities", 
+                          categorizedActivities.optional, 
+                          <Lightbulb className="w-5 h-5 mr-2" />, 
+                          "bg-blue-50", 
+                          "border-blue-100"
+                        )}
+                        
+                        {/* Travel Notes */}
+                        {renderSection(
+                          "Travel Notes", 
+                          categorizedActivities.notes, 
+                          <Info className="w-5 h-5 mr-2" />, 
+                          "bg-green-50", 
+                          "border-green-100"
+                        )}
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <p>No itinerary data available. Add some activities to your trip!</p>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+
+            {/* Image Gallery */}
+            <motion.section
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.3 }}
+            >
+              <h3 className="text-2xl font-bold text-[#493628] mb-4">Discover {destination}</h3>
+              <ImageGallery images={images} />
+            </motion.section>
+          </div>
+
+          {/* Sidebar */}
+          <motion.div 
+            initial={{ x: 20, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            className="space-y-6"
+          >
+            {/* Trip Summary Card */}
+            <div className="bg-white rounded-2xl shadow-xl p-6">
+              <h3 className="text-xl font-bold text-[#493628] mb-4">Trip Summary</h3>
+              <div className="flex items-center mb-6">
+                <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center mr-3">
+                  <Calendar className="w-5 h-5 text-amber-700" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Duration</p>
+                  <p className="font-medium">{duration} Days</p>
+                </div>
+              </div>
+              
+              <div className="flex items-center mb-6">
+                <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center mr-3">
+                  <Map className="w-5 h-5 text-amber-700" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Destination</p>
+                  <p className="font-medium">{destination}</p>
+                </div>
+              </div>
+              
+              <div className="flex items-center">
+                <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center mr-3">
+                  <Hotel className="w-5 h-5 text-amber-700" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Accommodations</p>
+                  <p className="font-medium">Premium Hotels</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Weather Card */}
+            <div className="bg-white rounded-2xl shadow-xl p-6">
+              <h3 className="text-xl font-bold text-[#493628] mb-4">Weather Forecast</h3>
+              {/* Add weather content */}
+            </div>
+          </motion.div>
+        </div>
+      </div>
+    </motion.div>
   );
 };
 
-export default TravelScreenshot;
+export default Itinerary;
