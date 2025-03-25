@@ -6,6 +6,8 @@ import { Progress } from "@/components/ui/progress";
 import { MapPin, Calendar, Users, Wallet, ArrowRight, Loader2 } from 'lucide-react';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { useNavigate, useLocation } from 'react-router-dom';
+import { tripsService } from '../services/tripsService';
+import { auth } from '../service/firebaseConfig';
 
 const API_KEY = "AIzaSyAapFYjM80sNoEQecwVzW-gfHaujskUe8c";
 
@@ -124,9 +126,21 @@ const CreateTrip = () => {
 
       const result = await model.generateContent(prompt);
       const tripData = result.response.text();
+
+      // Use Firebase auth user ID
+      if (auth.currentUser) {
+        const tripDetails = {
+          destination,
+          tripData,
+          answers
+        };
+        
+        await tripsService.createTrip(tripDetails, auth.currentUser.uid);
+      }
+
       navigate('/itin', { state: { destination, tripData, answers } });
     } catch (error) {
-      console.error("Error fetching trip plan:", error);
+      console.error("Error:", error);
       alert("Failed to create trip plan. Please try again.");
     }
     setLoading(false);
