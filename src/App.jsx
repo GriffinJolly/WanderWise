@@ -4,6 +4,7 @@ import CreateTrip from './create-trip';
 import Itin from './itin';
 import Header from './components/custom/Header';
 import MyTrips from './components/custom/MyTrips';
+import Destinations from './components/custom/Destinations';
 
 function App() {
   return (
@@ -11,6 +12,7 @@ function App() {
       <Header />
       <Routes>
         <Route path="/" element={<Hero />} />
+        <Route path="/destinations" element={<Destinations />} />
         <Route path="/create-trip" element={<CreateTrip />} />
         <Route path="/itin" element={<Itin />} />
         <Route path="/my-trips" element={<MyTrips />} />

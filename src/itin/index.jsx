@@ -2,21 +2,21 @@ import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { 
   Calendar, Plane, Map, Hotel, Coffee, Utensils, Sun, 
-  Sunset, Moon, Info, AlertCircle, ChefHat, Lightbulb, BookOpen
+  Sunset, Moon, Info, AlertCircle, ChefHat, Lightbulb, BookOpen, Users, Wallet
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { GoogleGenerativeAI } from "@google/generative-ai";
-import ImageGallery from '@/components/ui/ImageGallery';
 
 const Itinerary = () => {
   const location = useLocation();
-  const { destination, tripData } = location.state || { 
+  const { destination, tripData, answers } = location.state || { 
     destination: "Bangalore",
-    tripData: "Day 1:\n## Bangalore Travel Itinerary (5 Days/4 Nights)\n\nDay 1:\nThis itinerary balances historical exploration, cultural experiences, vibrant nightlife, and the natural beauty surrounding Bangalore. It's designed to be flexible, allowing you to adjust based on your interests and pace.\n\nDay 1:\n**Accommodation:** Choose based on your budget and preferred location. Options range from budget-friendly hostels (Zostel, The Hosteller) to mid-range hotels (The Chancery Pavilion, Lemon Tree Premier) and luxury properties (The Oberoi, ITC Gardenia). Consider staying near MG Road or Indiranagar for easy access to attractions and nightlife."
+    tripData: "Day 1:\n## Bangalore Travel Itinerary (5 Days/4 Nights)\n\nDay 1:\nThis itinerary balances historical exploration, cultural experiences, vibrant nightlife, and the natural beauty surrounding Bangalore. It's designed to be flexible, allowing you to adjust based on your interests and pace.\n\nDay 1:\n**Accommodation:** Choose based on your budget and preferred location. Options range from budget-friendly hostels (Zostel, The Hosteller) to mid-range hotels (The Chancery Pavilion, Lemon Tree Premier) and luxury properties (The Oberoi, ITC Gardenia). Consider staying near MG Road or Indiranagar for easy access to attractions and nightlife.",
+    answers: {
+      days: 5,
+      budget: 50000,
+      people: 2
+    }
   };
-
-  const [images, setImages] = useState([]);
-  const [loading, setLoading] = useState(true);
 
   const extractDurationFromText = (text) => {
     const durationMatch = text.match(/\((\d+)\s*Days/i);
@@ -204,28 +204,22 @@ const Itinerary = () => {
     );
   };
 
-  useEffect(() => {
-    fetchImagesFromGemini();
-  }, [destination]);
-
-  const fetchImagesFromGemini = async () => {
-    try {
-      const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GOOGLE_GEMINI_AI_API_KEY);
-      const model = genAI.getGenerativeModel({ model: "gemini-pro-vision" });
-      
-      // Get images for the destination
-      const prompt = `Generate a list of popular tourist spots and hotels in ${destination}`;
-      const result = await model.generateContent(prompt);
-      // Process the result and set images
-      // Note: You'll need to implement actual image fetching logic here
-      
-      setImages(/* processed images */);
-      setLoading(false);
-    } catch (error) {
-      console.error('Error fetching images:', error);
-      setLoading(false);
-    }
+  // Function to determine accommodation type based on budget per person per day
+  const getAccommodationType = (budget, days, people) => {
+    const perPersonPerDay = budget / (days * people);
+    
+    if (perPersonPerDay >= 10000) return 'Luxury Hotels';
+    if (perPersonPerDay >= 5000) return 'Premium Hotels';
+    if (perPersonPerDay >= 2000) return 'Mid-range Hotels';
+    return 'Budget Hotels';
   };
+
+  // Get accommodation type based on budget
+  const accommodationType = getAccommodationType(
+    answers?.budget || 50000,
+    answers?.days || 5,
+    answers?.people || 2
+  );
 
   return (
     <motion.div 
@@ -350,16 +344,6 @@ const Itinerary = () => {
                 )}
               </div>
             </motion.div>
-
-            {/* Image Gallery */}
-            <motion.section
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.3 }}
-            >
-              <h3 className="text-2xl font-bold text-[#493628] mb-4">Discover {destination}</h3>
-              <ImageGallery images={images} />
-            </motion.section>
           </div>
 
           {/* Sidebar */}
@@ -377,17 +361,27 @@ const Itinerary = () => {
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Duration</p>
-                  <p className="font-medium">{duration} Days</p>
+                  <p className="font-medium">{answers?.days || 5} Days</p>
                 </div>
               </div>
               
               <div className="flex items-center mb-6">
                 <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center mr-3">
-                  <Map className="w-5 h-5 text-amber-700" />
+                  <Users className="w-5 h-5 text-amber-700" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500">Destination</p>
-                  <p className="font-medium">{destination}</p>
+                  <p className="text-sm text-gray-500">Travelers</p>
+                  <p className="font-medium">{answers?.people || 2} People</p>
+                </div>
+              </div>
+
+              <div className="flex items-center mb-6">
+                <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center mr-3">
+                  <Wallet className="w-5 h-5 text-amber-700" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Budget</p>
+                  <p className="font-medium">₹{(answers?.budget || 50000).toLocaleString('en-IN')}</p>
                 </div>
               </div>
               
@@ -397,7 +391,7 @@ const Itinerary = () => {
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Accommodations</p>
-                  <p className="font-medium">Premium Hotels</p>
+                  <p className="font-medium">{accommodationType}</p>
                 </div>
               </div>
             </div>
