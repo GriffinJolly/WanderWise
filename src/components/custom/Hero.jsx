@@ -69,8 +69,8 @@ function Hero() {
   };
 
   return (
-    <div className="flex w-screen min-h-screen bg-gradient-to-br from-[#E4E0E1] to-[#D6C0B3]">
-      <div className='w-full md:w-2/3 flex flex-col justify-center px-4 md:px-28 space-y-8'>
+    <div className="flex flex-col w-screen min-h-screen bg-gradient-to-br from-[#E4E0E1] to-[#D6C0B3] relative">
+      <div className='w-full md:w-2/3 flex flex-col justify-center px-4 md:px-28 space-y-8 flex-grow'>
         <div className="space-y-4 px-4">
           <h1 className='text-4xl md:text-5xl font-bold text-[#493628] leading-tight'>
             <span className='text-[#AB886D]'>Discover</span> Your 
@@ -110,6 +110,13 @@ function Hero() {
             <span>Plan Your Trip</span>
           </button>
         </div>
+      </div>
+      
+      {/* Team Names Section */}
+      <div className="w-full text-center py-4 bg-[#493628]/10 text-[#493628]/70">
+        <p className="text-sm">
+          Developed by: Dwetta Pati 23BDS1072 | Dan N Mecartin 23BAI1291 | Griffin Jolly 23BDS1158
+        </p>
       </div>
     </div>
   );
